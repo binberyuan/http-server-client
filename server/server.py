@@ -1,61 +1,74 @@
 import socket
 
-PORT = 8000
-SERVER_ADDRESS = ('localhost', PORT)
+# Define the host and port for the server
+HOST = 'localhost'
+PORT = 6617 # port number
 
+# Define the file paths for index.html, pic1.jpg, pic2.jpg, and favicon.ico
+HTML_FILE_PATH = 'index.html'
+JPG_FILE_PATHS = ['profile.jpg','pic1.jpeg', 'pic2.jpeg']
+FAVICON_FILE_PATH = 'favicon.ico'
 
-def serve_forever():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
-        server_socket.bind(SERVER_ADDRESS)
-        server_socket.listen(1)
-        print(f"Server is listening on port {PORT}...")
-        while True:
-            client_socket, client_address = server_socket.accept()
-            request = client_socket.recv(1024)
-            response = handle_request(request)
-            client_socket.sendall(response)
-            client_socket.close()
+# Create a TCP socket
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.bind((HOST, PORT))
+server_socket.listen(5)
 
+print(f'Server is running on http://{HOST}:{PORT}/')
+print(f'Server is listening on {HOST}:{PORT}...')
+while True:
+    # Accept incoming connection from a client
+    connection, address = server_socket.accept()
 
-def handle_request(request):
-    # Parse the request method, path, and headers
-    method, path, *headers = request.split(b"\r\n")
+    # Receive the HTTP request from the client
+    request = connection.recv(1024).decode('utf-8')
+    print(f'Received request from {address}: {request}')
+    # print(request)
+    if request:
+        # Parse the requested object name from the HTTP request
+        requested_object = request.split()[1]
+        # print("requested_object: ", requested_object)
+        # Serve the requested object based on its file extension
+        if requested_object == '/':
+            # Serve the index.html file
+            with open(HTML_FILE_PATH, 'r') as file:
+                response = file.read()
+            # Send the HTTP response with proper headers
+            headers = 'HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n'
+            connection.sendall((headers + response).encode('utf-8'))
+        elif requested_object == '/index.html':
+            # Serve the index.html file
+            with open(HTML_FILE_PATH, 'r') as file:
+                response = file.read()
+            # Send the HTTP response with proper headers
+            headers = 'HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n'
+            connection.sendall((headers + response).encode('utf-8'))
+        elif requested_object.endswith('.jpeg') or requested_object.endswith('.jpg'):
+            # Serve the requested images file
+            if requested_object[1:] in JPG_FILE_PATHS:
+                with open(requested_object[1:], 'rb') as file:
+                    response = file.read()
+                headers = 'HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\n\r\n'
+                # print("len of response: ", len(response))
+                connection.sendall(headers.encode('utf-8') + response)
+            else:
+                # Send a 404 response if the requested JPG file is not found
+                response = 'HTTP/1.1 404 Not Found\r\n\r\n'
+                connection.sendall(response.encode('utf-8'))
+        elif requested_object == '/favicon.ico':
+            # Serve the dummy favicon.ico file
+            with open(FAVICON_FILE_PATH, 'rb') as file:
+                response = file.read()
+            headers = 'HTTP/1.1 200 OK\r\nContent-Type: image/x-icon\r\n\r\n'
+            connection.sendall(headers.encode('utf-8') + response)
+        else:
+            # Send a 404 response for any other requested object
+            response = 'HTTP/1.1 404 Not Found\r\n\r\n'
+            connection.sendall(response.encode('utf-8'))
+    else:
+        response = 'HTTP/1.1 400 Bad Request\r\n\r\nBad Request'
+        connection.sendall(response.encode('utf-8'))
 
-    # Only respond to GET requests for the root path "/"
-    if method != b"GET" or path != b"/":
-        return generate_response(404, b"Not Found", b"")
+    # Close the connection
+    connection.close()
 
-    # Load the HTML file and the images
-    with open("index.html", "rb") as f:
-        html = f.read()
-    with open("profile.jpg", "rb") as f:
-        profile_image = f.read()
-    with open("image1.jpg", "rb") as f:
-        image1 = f.read()
-    with open("image2.jpg", "rb") as f:
-        image2 = f.read()
-
-    # Generate the response headers and body
-    headers = [
-        b"HTTP/1.1 200 OK",
-        b"Content-Type: text/html",
-        f"Content-Length: {len(html) + len(profile_image) + len(image1) + len(image2)}".encode(),
-        b""
-    ]
-    body = html + profile_image + image1 + image2
-
-    return b"\r\n".join(headers) + body
-
-
-def generate_response(status_code, status_text, body):
-    headers = [
-        f"HTTP/1.1 {status_code} {status_text}",
-        b"Content-Type: text/plain",
-        f"Content-Length: {len(body)}".encode(),
-        b""
-    ]
-    return b"\r\n".join(headers) + body
-
-
-if __name__ == "__main__":
-    serve_forever()

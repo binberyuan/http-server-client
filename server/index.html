@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Binber's Website</title>
+    <style>
+        .image-container {
+            display: flex;
+            justify-content: space-between;
+        }
+        .image-box {
+            flex: 0 0 48%;
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+        .image-box img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Binber's Website</h1>
+    </header>
+    <img src="profile.jpg" alt="my_photo" width="300" height="300">
+    <h1>About</h1>
+    <p>Hello! Welcome to Binber's Website</p>
+    <p>Here are some pictures:</p>
+    <div class="image-container">
+        <div class="image-box">
+            <a href="pic1.jpeg">
+                <img src="pic1.jpeg" alt="my_photo" width="300" height="300">
+                <p>Picture 1</p>
+            </a>
+        </div>
+        <div class="image-box">
+            <a href="pic2.jpeg">
+                <img src="pic2.jpeg" alt="my_photo" width="300" height="300">
+                <p>Picture 2</p>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
